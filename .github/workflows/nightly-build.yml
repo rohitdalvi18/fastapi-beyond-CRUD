@@ -1,12 +1,12 @@
 name: Nightly builds
 
 on:
-    push:
-      branches:
-        - main
-    schedule:
-      - cron: "10 3 * * *"
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+   - cron: "52 23 * * *"
+  workflow_dispatch:
 
 jobs:
   test-build-publish:
@@ -19,14 +19,22 @@ jobs:
       - name: Copy .env.example to .env
         run: cp .env.example .env
 
-      - name: Set Up Docker Compose
+      - name: Set up Docker Compose
         run: sudo apt-get install docker-compose
 
-      - name: Docker Compose Up
-        run: docker-compose up -d
-
-      - name: Install libraries
-        run: pip install -r requirements.txt
+      - name: Build and Run Containers
+        run: docker-compose up -d --build
 
       - name: Install pytest
-        run: pip install pytest
+        run: docker exec fastapi_container pip install pytest
+
+      - name: Run Tests Inside the Container
+        run: docker exec fastapi_container pytest src/tests
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/fastapi-beyond-CRUD:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/fastapi-beyond-CRUD:latest

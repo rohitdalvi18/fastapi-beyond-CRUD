@@ -3,6 +3,7 @@ version: "3.0"
 services:
   web:
     build: .
+      container_name: CRUD
     volumes:
       - .:/app
     environment: 

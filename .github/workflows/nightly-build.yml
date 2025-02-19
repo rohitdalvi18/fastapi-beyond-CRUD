@@ -41,7 +41,6 @@ jobs:
 
   notify_failure:
     name: Notify on Failure via Email
-    needs: test-build-publish
     if: ${{ needs.test_and_build.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:

@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-   - cron: "30 8 * * *"
+   - cron: "35 8 * * *"
   workflow_dispatch:
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
 
   notify_failure:
     name: Notify on Failure via Email
-    if: ${{ needs.test_and_build.result == 'failure' }}
+    if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Send Failure Notification Email

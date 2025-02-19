@@ -3,7 +3,7 @@ version: "3.0"
 services:
   web:
     build: .
-      container_name: CRUD
+    image: rohitdalvi18/fastapi-beyond-crud:latest
     volumes:
       - .:/app
     environment: 

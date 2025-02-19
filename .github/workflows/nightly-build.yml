@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-   - cron: "40 3 * * *"
+   - cron: "45 3 * * *"
   workflow_dispatch:
 
 jobs:
@@ -36,5 +36,5 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/fastapi-beyond-CRUD:latest .
-          docker push ghcr.io/${{ github.repository_owner }}/fastapi-beyond-CRUD:latest
+          docker build -t ghcr.io/${{ github.repository_owner }}/fastapi-beyond-crud:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/fastapi-beyond-crud:latest

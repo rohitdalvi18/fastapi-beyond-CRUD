@@ -1,12 +1,12 @@
 name: Nightly builds
 
 on:
-    push:
-      branches:
-        - main
-    schedule:
-      - cron: "10 3 * * *"
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+   - cron: "5 19 * * *"
+  workflow_dispatch:
 
 jobs:
   test-build-publish:
@@ -19,14 +19,70 @@ jobs:
       - name: Copy .env.example to .env
         run: cp .env.example .env
 
-      - name: Set Up Docker Compose
+      - name: Set up Docker Compose
         run: sudo apt-get install docker-compose
 
-      - name: Docker Compose Up
-        run: docker-compose up -d
-
-      - name: Install libraries
-        run: pip install -r requirements.txt
+      - name: Build and Run Containers
+        run: docker-compose up -d --build
 
       - name: Install pytest
-        run: pip install pytest
+        run: docker exec CRUD pip install pytest
+
+      - name: Run Tests Inside the Container
+        run: docker exec CRUD pytest src/tests
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/fastapi-beyond-crud:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/fastapi-beyond-crud:latest
+
+  notify_failure:
+    name: Notify on Failure via Email
+    needs: test-build-publish
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Failure Notification Email
+        run: |
+          RECIPIENT="${{ secrets.NOTIFY_EMAIL }}"
+          if [ -z "$RECIPIENT" ]; then
+            RECIPIENT="rohit.dalvi2001@gmail.com"
+          fi
+          echo "Recipient email: $RECIPIENT"
+          export NOTIFY_EMAIL="$RECIPIENT"
+          
+          cat << 'EOF' > send_failure_email.js
+          const nodemailer = require('nodemailer');
+          
+          async function main() {
+            let transporter = nodemailer.createTransport({
+              host: 'smtp.ethereal.email',
+              port: 587,
+              auth: {
+                user: 'allan.wolf79@ethereal.email',
+                pass: 'jZVyKAQhpzQGNCPeMT'
+              }
+            });
+            
+            let info = await transporter.sendMail({
+              from: '"Nightly Build" <no-reply@example.com>',
+              to: 'rohit.dalvi2001@gmail.com',
+              subject: 'Nightly Build Failed',
+              text: 'The nightly build for repository: https://github.com/rohitdalvi18/fastapi-beyond-CRUD has failed. Please review the build logs for details.'
+            });
+            
+            console.log('Message sent: ' + info.messageId);
+            console.log('Preview URL: ' + nodemailer.getTestMessageUrl(info));
+          }
+          
+          main().catch(console.error);
+          EOF
+          
+          npm init -y
+          npm install nodemailer
+          
+          node send_failure_email.js
+        shell: bash

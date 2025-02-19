@@ -1,0 +1,28 @@
+name: Nightly builds
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-build-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Set Up Docker Compose
+        run: sudo apt-get install docker-compose
+
+      - name: Docker Compose Up
+        run: docker-compose up -d
+
+      - name: Install libraries
+        run: pip install -r requirements.txt
+
+      - name: Install pytest
+        run: pip install pytest

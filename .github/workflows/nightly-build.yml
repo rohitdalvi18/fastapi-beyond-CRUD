@@ -1,8 +1,8 @@
 name: Nightly builds
 
 on:
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: "42 2 * * *"
 
 jobs:
   test-build-publish:

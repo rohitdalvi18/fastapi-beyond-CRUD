@@ -12,11 +12,15 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - uses: commit-check/commit-check-action@v1
+
+      - name: Check conventional commits
+        uses: commit-check/commit-check-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
@@ -28,3 +32,71 @@ jobs:
           merge-base: false
           job-summary: true
           pr-comments: ${{ github.event_name == 'pull_request' }}
+
+      - name: Comment on pull request if invalid commits
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "***Invalid commit messages detected!***\n\nYour PR contains commits that do not follow the conventional commits format. Please update your commits.\n\nInvalid commits:\n```\n${{ env.INVALID_COMMITS }}\n```"
+            });
+        
+      - name: Close pull request if invalid commits
+        if: failure()
+        run: |
+          gh pr close ${{ github.event.pull_request.number }} --comment "PR closed due to invalid commit messages. Please follow the Conventional Commits format."
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+  notify_failure:
+    name: Notify on Failure via Email
+    needs: commit-check
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Failure Notification Email
+        run: |
+          RECIPIENT="${{ secrets.NOTIFY_EMAIL }}"
+          if [ -z "$RECIPIENT" ]; then
+            RECIPIENT="rohit.dalvi2001@gmail.com"
+          fi
+          echo "Recipient email: $RECIPIENT"
+          export NOTIFY_EMAIL="$RECIPIENT"
+          
+          cat << 'EOF' > send_failure_email.js
+          const nodemailer = require('nodemailer');
+          
+          async function main() {
+            let transporter = nodemailer.createTransport({
+              host: 'smtp.ethereal.email',
+              port: 587,
+              auth: {
+                user: 'allan.wolf79@ethereal.email',
+                pass: 'jZVyKAQhpzQGNCPeMT'
+              }
+            });
+            
+            let info = await transporter.sendMail({
+              from: '"Nightly Build" <no-reply@example.com>',
+              to: 'rohit.dalvi2001@gmail.com',
+              subject: 'PR Closed: Commit Message doesn’t follow Conventional Commit Guidelines',
+              text: 'To maintain a clean commit history, this PR was closed due to a Conventional Commit violation. Please reformat your commit messages accordingly and submit again.'
+            });
+            
+            console.log('Message sent: ' + info.messageId);
+            console.log('Preview URL: ' + nodemailer.getTestMessageUrl(info));
+          }
+          
+          main().catch(console.error);
+          EOF
+          
+          npm init -y
+          npm install nodemailer
+          
+          node send_failure_email.js
+        shell: bash

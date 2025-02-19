@@ -1,11 +1,11 @@
 name: Nightly builds
 
 on:
-  push:
-    branches:
-      - main
+#   push:
+#     branches:
+#       - main
   schedule:
-   - cron: "45 3 * * *"
+   - cron: "10 5 * * *"
   workflow_dispatch:
 
 jobs:

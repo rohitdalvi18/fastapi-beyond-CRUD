@@ -1,0 +1,30 @@
+name: Conventional commit check
+
+on:
+  pull_request:
+    branches: "main"
+
+jobs:
+  commit-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: commit-check/commit-check-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          message: true
+          branch: false
+          author-name: false
+          author-email: false
+          commit-signoff: false
+          merge-base: false
+          job-summary: true
+          pr-comments: ${{ github.event_name == 'pull_request' }}

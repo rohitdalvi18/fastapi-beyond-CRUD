@@ -76,5 +76,68 @@ Run the tests using this command
 pytest
 ```
 
+# Continuous Integration Workflows:
+
+## Overview
+This repository includes two GitHub Actions workflows:
+1. **Conventional Commit Check**: Ensures that all pull request commits follow the [SemVer Conventional Commit](https://www.conventionalcommits.org/) standard.
+2. **Nightly Build**: Runs a scheduled nightly build (12am) that tests, builds, and pushes a Docker image. 
+
+---
+
+## 1. Conventional Commit Check
+### **Triggers**:
+- Runs automatically on **pull requests** targeting the `main` branch.
+
+### **Job: `commit-check`**
+- Checks out the PR branch.
+- Runs a commit-check action to validate commit messages against the conventional commit standard.
+- Adds PR comments if the commit messages do not comply.
+
+### **Usage**
+To pass this check, commit messages should follow the format:
+```
+type(scope): description
+```
+Examples:
+- `feat(auth): add JWT authentication`
+- `fix(ui): resolve button alignment issue`
+- `chore(deps): update dependencies`
+
+---
+
+## 2. Nightly Build
+### **Triggers**:
+- Runs on **every push** to the `main` branch.
+- Scheduled to run **daily at 12:00 AM UTC**
+- Sends a failure notification via email if test/build/publish fails.
+
+#### **Steps:**
+1. Checks out the repository.
+2. Copies `.env.example` to `.env`.
+3. Installs Docker Compose.
+4. Builds and runs containers.
+5. Installs and runs tests using `pytest` inside the `CRUD` container.
+6. Logs into Registry.
+7. Builds and pushes the Docker image.
+8. If test/build/publish fails, sends an email notification with build failure details.
+9. Retrieves the recipient email.
+10. Generates a `send_failure_email.js` script.
+ 
+
+---
+
+## Contributing
+- Follow the [Conventional Commits](https://www.conventionalcommits.org/) standard.
+- Submit PRs following best practices.
+- Run tests before pushing changes.
+
+---
+
+## License
+This project is open-source and available under the MIT License.
+
+
+
 ## Contributing
 I welcome contributions to improve the documentation! You can contribute [here](https://github.com/jod35/fastapi-beyond-crud-docs).

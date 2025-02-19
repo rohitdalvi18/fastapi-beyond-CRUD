@@ -41,6 +41,7 @@ jobs:
 
   notify_failure:
     name: Notify on Failure via Email
+    needs: test-build-publish
     if: failure()
     runs-on: ubuntu-latest
     steps:

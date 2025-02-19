@@ -88,11 +88,13 @@ This repository includes two GitHub Actions workflows:
 ## 1. Conventional Commit Check
 ### **Triggers**:
 - Runs automatically on **pull requests** targeting the `main` branch.
+- Sends a failure notification via email if conventional commit check fails.
 
-### **Job: `commit-check`**
+### **Job:**
 - Checks out the PR branch.
 - Runs a commit-check action to validate commit messages against the conventional commit standard.
-- Adds PR comments if the commit messages do not comply.
+- Closes the PR and add comments if the commit messages do not comply.
+- Sends failure notification via mail
 
 ### **Usage**
 To pass this check, commit messages should follow the format:
@@ -124,13 +126,6 @@ Examples:
 9. Retrieves the recipient email.
 10. Generates a `send_failure_email.js` script.
  
-
----
-
-## Contributing
-- Follow the [Conventional Commits](https://www.conventionalcommits.org/) standard.
-- Submit PRs following best practices.
-- Run tests before pushing changes.
 
 ---
 

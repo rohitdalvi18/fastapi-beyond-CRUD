@@ -1,54 +1,30 @@
 name: Conventional commit check
+
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: "main"
+
 jobs:
-  commit-lint:
+  commit-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Get pull request commits
-        id: commits
-        run: |
-          PR_COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].message')
-          echo "$PR_COMMITS" > commits.txt
-          env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      - name: Check conventional commits
-        id: check_commits
-        run: |
-          echo "Checking commit messages..."
-          regex="^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?: .+"
-          invalid_commits=""
-          while read -r commit; do
-            if [[ ! "$commit" =~ $regex ]]; then
-              invalid_commits+="$commit\n"
-            fi
-          done < commits.txt
-          
-          if [[ -n "$invalid_commits" ]]; then
-            echo "Invalid commit messages found!"
-            echo "INVALID_COMMITS<<EOF" >> $GITHUB_ENV
-            echo -e "$invalid_commits" >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
-            exit 1
-          fi
-      - name: Comment on pull request if invalid commits
-        if: failure()
-        uses: actions/github-script@v7
+      - uses: actions/checkout@v4
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "***Invalid commit messages detected!***\n\nYour PR contains commits that do not follow the conventional commits format. Please update your commits.\n\nInvalid commits:\n```\n${{ env.INVALID_COMMITS }}\n```"
-            });
-      - name: Close pull request if invalid commits
-        if: failure()
-        run: |
-          gh pr close ${{ github.event.pull_request.number }} --comment "PR closed due to invalid commit messages. Please follow the Conventional Commits format."
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: commit-check/commit-check-action@v1
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          message: true
+          branch: false
+          author-name: false
+          author-email: false
+          commit-signoff: false
+          merge-base: false
+          job-summary: true
+          pr-comments: ${{ github.event_name == 'pull_request' }}

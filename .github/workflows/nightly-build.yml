@@ -69,7 +69,7 @@ jobs:
             
             let info = await transporter.sendMail({
               from: '"Nightly Build" <no-reply@example.com>',
-              to: rohit.dalvi2001@gmail.com,
+              to: 'rohit.dalvi2001@gmail.com',
               subject: 'Nightly Build Failed',
               text: 'The nightly build for repository: https://github.com/rohitdalvi18/fastapi-beyond-CRUD has failed. Please review the build logs for details.'
             });
